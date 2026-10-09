@@ -1,0 +1,33 @@
+#!/bin/bash
+# Runs inside the container: starts fcgiwrap + nginx in the foreground and
+# shuts both down when either exits or the container is stopped.
+VAR=/var/hf
+mkdir -p $VAR/data $VAR/log $VAR/run/tmp
+# Refuse to clobber the socket/db of another running copy sharing this var dir
+# (a lock on the shared file works across containers and pid namespaces).
+exec 9>$VAR/run/hf-start.lock
+if ! flock -n 9; then
+    echo "hf-start: another copy is already running with this var dir" >&2
+    exit 1
+fi
+rm -f $VAR/run/fcgiwrap.sock $VAR/run/nginx.pid
+# singularity instance stop does not pass SIGTERM on to us; bin/hf-container signals this pid
+# (from inside the instance, as it is in the instance's pid namespace).
+echo $$ >$VAR/run/hf-start.pid
+
+fcgiwrap -c 2 -s unix:$VAR/run/fcgiwrap.sock >>$VAR/log/fcgiwrap.log 2>&1 9>&- &
+FCGI=$!
+nginx -p $VAR/ -c /etc/hf/nginx.conf -e $VAR/log/nginx-error.log -g 'daemon off;' 9>&- &
+NGINX=$!
+
+shutdown() {
+    kill $NGINX $FCGI 2>/dev/null
+    wait
+    rm -f $VAR/run/fcgiwrap.sock $VAR/run/hf-start.pid
+}
+trap 'shutdown; exit 0' TERM INT
+
+wait -n $FCGI $NGINX
+echo "$(date) hf-start: a child exited, shutting down" >>$VAR/log/fcgiwrap.log
+shutdown
+exit 1

@@ -1,0 +1,27 @@
+BootStrap: docker
+From: ubuntu:24.04
+
+%files
+    bin/hf-start /usr/local/bin/hf-start
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y --no-install-recommends nginx-light fcgiwrap python3 sqlite3 tzdata
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+    mkdir -p /srv/www /var/hf /etc/hf
+    chmod 755 /usr/local/bin/hf-start
+
+%environment
+    export TZ="America/Los_Angeles"
+
+%runscript
+    exec /usr/local/bin/hf-start
+
+%startscript
+    exec /usr/local/bin/hf-start
+
+%labels
+    Author miguelitosd
+    Description Healthy Foundations goals tracker (nginx + fcgiwrap + sqlite3)

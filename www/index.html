@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Healthy Foundations Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Healthy Foundations<br>Program Goals Tracker</h1>
+
+    <form id="controls" onsubmit="return false">
+      <label>Week starts on
+        <select id="start-day"></select>
+      </label>
+      <label>Week of
+        <input type="date" id="week-date" required>
+      </label>
+      <span class="nav">
+        <button type="button" id="prev" title="Previous week">&larr;</button>
+        <button type="button" id="today">This week</button>
+        <button type="button" id="next" title="Next week">&rarr;</button>
+      </span>
+    </form>
+
+    <p id="range"></p>
+
+    <div class="table-wrap">
+      <table id="tracker">
+        <thead><tr id="head-row"></tr></thead>
+        <tbody id="body-rows"></tbody>
+      </table>
+    </div>
+
+    <p id="status" role="status" aria-live="polite"></p>
+
+    <p class="note">
+      You are welcome to use any tracking method in the Healthy Foundations program.
+      Please remember to submit your weekly totals for physical activity minutes,
+      fruit/vegetable servings, meal replacements and your weekly weight when logging
+      in for your weekly webinar meeting.
+    </p>
+
+    <section id="charts" aria-label="Progress charts">
+      <div class="charts-head">
+        <h2>Progress</h2>
+        <div id="span-picker" class="span-picker" role="group" aria-label="Chart time span"></div>
+      </div>
+
+      <div class="chart-card" id="weight-card">
+        <h3>Weight <span class="unit"></span></h3>
+        <div class="chart"></div>
+        <div class="tooltip" hidden></div>
+        <details><summary>Data table</summary><div class="tbl"></div></details>
+      </div>
+
+      <div class="chart-card" id="summary-card">
+        <h3>Weekly totals</h3>
+        <div class="chart"></div>
+        <div class="tooltip" hidden></div>
+        <details><summary>Data table</summary><div class="tbl"></div></details>
+      </div>
+      <p class="hint">Hover or use arrow keys for values; click a week to show it in the tracker above.</p>
+    </section>
+  </main>
+  <script src="charts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

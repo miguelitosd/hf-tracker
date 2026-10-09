@@ -1,0 +1,33 @@
+#!/bin/bash
+# Start/stop the HF tracker singularity instance.  Called by the systemd unit.
+
+DIR="$(cd "$(dirname "$0")/.." && pwd)"
+NAME=hf-tracker
+cd "$DIR" || exit 1
+
+case $1 in
+    start)
+        mkdir -p var/data var/log var/run
+        singularity instance start \
+            --bind "${DIR}/www:/srv/www:ro,${DIR}/var:/var/hf,${DIR}/conf:/etc/hf:ro,${DIR}/bin/hf-start:/usr/local/bin/hf-start:ro" \
+            hf-tracker.sif $NAME
+    ;;
+    stop)
+        # Let hf-start shut nginx/fcgiwrap down cleanly before the instance is torn down.
+        if [ -f var/run/hf-start.pid ]; then
+            singularity exec instance://$NAME sh -c 'kill -TERM "$(cat /var/hf/run/hf-start.pid)"' 2>/dev/null
+            for _ in 1 2 3 4 5 6 7 8 9 10; do
+                [ -f var/run/hf-start.pid ] || break
+                sleep 0.5
+            done
+        fi
+        singularity instance stop --force $NAME
+    ;;
+    status)
+        singularity instance list $NAME
+    ;;
+    *)
+        echo "usage: $0 start|stop|status" >&2
+        exit 1
+    ;;
+esac

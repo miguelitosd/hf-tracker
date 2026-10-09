@@ -1,0 +1,14 @@
+# built image
+*.sif
+# runtime data: sqlite db, logs, sockets (keep the empty dir)
+var/*
+!var/.gitkeep
+*.db
+*.db-journal
+*.log
+# python bytecode
+__pycache__/
+*.pyc
+# local test instance and db backups
+.testvar/
+backups/

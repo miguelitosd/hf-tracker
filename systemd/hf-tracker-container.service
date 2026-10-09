@@ -1,0 +1,14 @@
+[Unit]
+Description=Healthy Foundations tracker in Singularity container
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/home/<USER>/git-work/HF-tracking/bin/hf-container start
+ExecStop=/home/<USER>/git-work/HF-tracking/bin/hf-container stop
+User=<USER>
+Group=<USER>
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
