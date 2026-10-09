@@ -18,6 +18,27 @@ The service runs in a singularity container (like graphite-api-singularity):
 nginx serves the static HTML5 page and runs a small Python CGI JSON API through fcgiwrap,
 which stores data in sqlite3.
 
+# Screenshots
+Sample data, 3-month chart view.
+
+**Desktop** (1440px)
+
+![Desktop](docs/screenshots/desktop.png)
+
+**Desktop, dark mode** (follows the OS setting)
+
+![Desktop, dark mode](docs/screenshots/desktop-dark.png)
+
+<table>
+<tr><th>Tablet (820px)</th><th>Phone (390px)</th></tr>
+<tr>
+<td valign="top"><img src="docs/screenshots/tablet.png" alt="Tablet" width="420"></td>
+<td valign="top"><img src="docs/screenshots/phone.png" alt="Phone" width="200"></td>
+</tr>
+</table>
+
+On a phone the daily table scrolls sideways with the row labels pinned; the charts fit the screen.
+
 # Layout
 * `www/` -> `/srv/www` (read-only): the page (`index.html`, `app.js`, `charts.js`, `style.css`) and `cgi-bin/api.py`
 * `var/` -> `/var/hf`: `data/tracker.db` (sqlite3), `log/` (nginx + fcgiwrap logs), `run/` (socket, pid, temp)
