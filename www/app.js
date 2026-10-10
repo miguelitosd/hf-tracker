@@ -185,7 +185,7 @@ function weightRow(dates, todayIso) {
 // Weight row "total": change since the previous recorded weight.
 function updateWeightChange() {
   const cell = document.querySelector("td.weight-change");
-  const n = parseFloat(document.querySelector(`input[data-metric="${state.weight.key}"]`).value);
+  const n = parseFloat($("tracker").querySelector(`input[data-metric="${state.weight.key}"]`).value);
   if (Number.isNaN(n) || state.prevWeight === null) {
     cell.textContent = "";
     cell.title = state.prevWeight === null ? "No earlier weigh-in" : "";
@@ -198,7 +198,8 @@ function updateWeightChange() {
 
 function updateTotal(metric) {
   let sum = 0;
-  document.querySelectorAll(`input[data-metric="${metric}"]`).forEach((el) => {
+  // Scoped to the tracker: the goals panel inputs carry data-metric too.
+  $("tracker").querySelectorAll(`input[data-metric="${metric}"]`).forEach((el) => {
     const n = parseFloat(el.value);
     if (!Number.isNaN(n)) sum += n;
   });
@@ -252,7 +253,7 @@ async function flushPending() {
   for (const [key, t] of pending) {
     clearTimeout(t);
     const [day, metric] = key.split("|");
-    const input = document.querySelector(`input[data-day="${day}"][data-metric="${metric}"]`);
+    const input = $("tracker").querySelector(`input[data-day="${day}"][data-metric="${metric}"]`);
     if (input) await save(input);
   }
 }
