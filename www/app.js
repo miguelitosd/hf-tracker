@@ -31,6 +31,15 @@ function fmtNum(n) {
   return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
 }
 
+// Row label text for a metric's goal, e.g. "Goal of 35+ per week (5/day)".
+function goalText(m) {
+  const g = m.weekly_goal;
+  if (!g) return m.note ? `No goal set, ${m.note}` : "No goal set";
+  let text = `Goal of ${fmtNum(g)}+ per week`;
+  if (m.per_day) text += ` (${fmtNum(Math.round((g / 7) * 10) / 10)}/day)`;
+  return m.note ? `${text}, ${m.note}` : text;
+}
+
 function setStatus(msg, isError = false) {
   $("status").textContent = msg;
   $("status").className = isError ? "error" : "";
@@ -90,7 +99,7 @@ function render() {
     label.scope = "row";
     label.innerHTML = `<span><small></small></span>`;
     label.querySelector("small").textContent = m.label;
-    label.querySelector("span").append(`(${m.goal})`);
+    label.querySelector("span").append(`(${goalText(m)})`);
     tr.append(label);
 
     for (const d of dates) {
@@ -263,6 +272,50 @@ async function goTo(date) {
   }
 }
 
+// "Weekly goals" panel: one input per daily metric, saved on change.
+function buildGoalFields() {
+  const holder = $("goal-fields");
+  holder.replaceChildren();
+  for (const m of state.metrics) {
+    const label = document.createElement("label");
+    const name = document.createElement("span");
+    name.textContent = m.label;
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = "0";
+    input.step = "any";
+    input.inputMode = "decimal";
+    input.value = fmtNum(m.weekly_goal);
+    input.dataset.metric = m.key;
+    const unit = document.createElement("small");
+    unit.textContent = "per week";
+    label.append(name, input, unit);
+    holder.append(label);
+    input.addEventListener("change", () => saveGoal(input));
+  }
+}
+
+async function saveGoal(input) {
+  const m = state.metrics.find((x) => x.key === input.dataset.metric);
+  const raw = input.value.trim();
+  if (raw === "" || !input.checkValidity()) {
+    input.value = fmtNum(m.weekly_goal);
+    setStatus("A goal must be a number of 0 or more (0 = no goal).", true);
+    return;
+  }
+  try {
+    const res = await api("POST", { action: "set_settings", goals: { [m.key]: parseFloat(raw) } });
+    state.metrics = res.metrics;
+    await flushPending();
+    render();
+    HFCharts.drawAll();
+    setStatus(`${m.label} goal saved.`);
+  } catch (e) {
+    input.value = fmtNum(m.weekly_goal);
+    setStatus(`Could not save goal: ${e.message}`, true);
+  }
+}
+
 async function init() {
   const qd = new URLSearchParams(location.search).get("date");
   if (qd && /^\d{4}-\d{2}-\d{2}$/.test(qd)) state.anchor = parseIso(qd);
@@ -301,6 +354,7 @@ async function init() {
   $("today").addEventListener("click", () => goTo(new Date()));
   window.addEventListener("beforeunload", () => { flushPending(); });
 
+  buildGoalFields();
   render();
   HFCharts.init();
 }

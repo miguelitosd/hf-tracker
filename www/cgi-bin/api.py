@@ -5,7 +5,8 @@ GET  api.py?from=YYYY-MM-DD&to=YYYY-MM-DD
      -> {"metrics": [...], "settings": {...}, "entries": {"YYYY-MM-DD": {metric: value}}}
      ("prev_weight" is the latest weight recorded before "from", or null)
 POST {"action": "set_entry", "day": "YYYY-MM-DD", "metric": "...", "value": number|null}
-POST {"action": "set_settings", "start_day": "thursday"}
+POST {"action": "set_settings", "start_day": "thursday", "goals": {"activity": 150, ...}}
+     (either field may be omitted; a goal of 0 means no goal)
 """
 import datetime
 import json
@@ -16,18 +17,21 @@ import sys
 DB = os.environ.get("HF_DB", "/var/hf/data/tracker.db")
 
 # Daily rows of the tracker.  Add/rename rows here; the page builds itself from this list.
-# weekly_goal draws a goal line on that metric's weekly summary chart.
+# weekly_goal is the default weekly goal (editable on the page, stored in settings as
+# goal_<key>); per_day also shows it as a daily amount; note is appended to the goal text.
 METRICS = [
-    {"key": "activity", "label": "Physical Activity Minutes", "goal": "Goal of 150+ per week",
-     "color": "blue", "weekly_goal": 150},
-    {"key": "produce", "label": "Vegetable/Fruit Servings", "goal": "Goal of 5+ per day",
-     "color": "orange", "weekly_goal": 35},
-    {"key": "meal_replacements", "label": "Meal Replacements", "goal": "Goal of 1+/day, if using",
-     "color": "pink", "weekly_goal": 7},
+    {"key": "activity", "label": "Physical Activity Minutes", "color": "blue",
+     "weekly_goal": 150, "per_day": False, "note": ""},
+    {"key": "produce", "label": "Vegetable/Fruit Servings", "color": "orange",
+     "weekly_goal": 35, "per_day": True, "note": ""},
+    {"key": "meal_replacements", "label": "Meal Replacements", "color": "pink",
+     "weekly_goal": 7, "per_day": True, "note": "if using"},
 ]
+DAILY_KEYS = {m["key"] for m in METRICS}
+MAX_GOAL = 100000
 # Once-a-week row, entered under the first day of the week.
 WEIGHT = {"key": "weight", "label": "Weekly Weight", "unit": "lb"}
-METRIC_KEYS = {m["key"] for m in METRICS} | {WEIGHT["key"]}
+METRIC_KEYS = DAILY_KEYS | {WEIGHT["key"]}
 DAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 DEFAULT_SETTINGS = {"start_day": "thursday"}
 
@@ -62,6 +66,12 @@ def get_settings(db):
     return settings
 
 
+def metrics_with_goals(settings):
+    """METRICS with weekly_goal replaced by the configured goal, where one is set."""
+    return [dict(m, weekly_goal=float(settings.get(f"goal_{m['key']}", m["weekly_goal"])))
+            for m in METRICS]
+
+
 def handle_get(db, query):
     today = datetime.date.today()
     start = parse_day(query.get("from", (today - datetime.timedelta(days=6)).isoformat()))
@@ -72,8 +82,9 @@ def handle_get(db, query):
         entries.setdefault(day, {})[metric] = value
     prev = db.execute("SELECT value FROM entries WHERE metric = ? AND day < ? ORDER BY day DESC LIMIT 1",
                       (WEIGHT["key"], start)).fetchone()
-    return {"metrics": METRICS, "weight": WEIGHT, "days": DAYS, "settings": get_settings(db),
-            "entries": entries, "prev_weight": prev[0] if prev else None}
+    settings = get_settings(db)
+    return {"metrics": metrics_with_goals(settings), "weight": WEIGHT, "days": DAYS,
+            "settings": settings, "entries": entries, "prev_weight": prev[0] if prev else None}
 
 
 def handle_post(db, body):
@@ -100,12 +111,31 @@ def handle_post(db, body):
         db.commit()
         return {"ok": True, "day": day, "metric": metric, "value": value}
     if action == "set_settings":
-        start_day = body.get("start_day")
-        if start_day not in DAYS:
-            raise BadRequest(f"invalid start_day: {start_day!r}")
-        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('start_day', ?)", (start_day,))
+        updates = {}
+        if "start_day" in body:
+            if body["start_day"] not in DAYS:
+                raise BadRequest(f"invalid start_day: {body['start_day']!r}")
+            updates["start_day"] = body["start_day"]
+        goals = body.get("goals")
+        if goals is not None:
+            if not isinstance(goals, dict):
+                raise BadRequest("goals must be an object")
+            for key, value in goals.items():
+                if key not in DAILY_KEYS:
+                    raise BadRequest(f"unknown goal: {key!r}")
+                try:
+                    value = float(value)
+                except (TypeError, ValueError):
+                    raise BadRequest(f"invalid goal for {key}: {value!r}")
+                if not 0 <= value <= MAX_GOAL:
+                    raise BadRequest(f"goal for {key} must be between 0 and {MAX_GOAL}")
+                updates[f"goal_{key}"] = str(value)
+        if not updates:
+            raise BadRequest("nothing to set")
+        db.executemany("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", updates.items())
         db.commit()
-        return {"ok": True, "settings": get_settings(db)}
+        settings = get_settings(db)
+        return {"ok": True, "settings": settings, "metrics": metrics_with_goals(settings)}
     raise BadRequest(f"unknown action: {action!r}")
 
 

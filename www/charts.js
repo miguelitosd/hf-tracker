@@ -416,7 +416,7 @@ const HFCharts = (() => {
     let lastWidth = 0;
     new ResizeObserver(([e]) => {
       const w = Math.round(e.contentRect.width);
-      if (w !== lastWidth) { lastWidth = w; drawAll(); }
+      if (w !== lastWidth) { lastWidth = w; requestAnimationFrame(drawAll); }
     }).observe(document.getElementById("charts"));
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
     refresh();

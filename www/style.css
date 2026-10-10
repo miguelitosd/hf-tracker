@@ -112,6 +112,28 @@ button { cursor: pointer; }
 button:hover { background: var(--total); }
 .nav { display: flex; gap: 4px; }
 #range { margin: 16px 0 8px; font-weight: 600; }
+.goals { margin-top: 14px; }
+.goals summary { cursor: pointer; font-weight: 600; }
+.goal-fields {
+  display: grid;
+  grid-template-columns: max-content 6em max-content;
+  gap: 8px 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+.goal-fields label { display: contents; }
+.goal-fields input {
+  width: 6em;
+  font: inherit;
+  color: var(--ink);
+  background: var(--cell);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 8px;
+  text-align: right;
+}
+.goal-fields small { color: var(--muted); }
+.goals .hint { margin: 8px 0 0; }
 
 .table-wrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; min-width: 640px; }

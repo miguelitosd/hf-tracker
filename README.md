@@ -6,6 +6,9 @@ editable numeric fields for physical activity minutes, vegetable/fruit servings 
 replacements; the last column is the weekly total.  The first day of the week is configurable
 (default Thursday, stored in the database) and a date picker / prev / next buttons choose which
 week to view (default: the current week).  Values save automatically as you type.
+The weekly goals (activity minutes, vegetable/fruit servings, meal replacements; defaults
+150 / 35 / 7) are set in the "Weekly goals" panel under the week controls and drive the row
+labels and the chart goal lines; 0 means no goal.
 
 A weekly weight is entered under the first day of the week; its "total" cell shows the change
 since the previous weigh-in.  Below the tracker, a **Progress** section charts weight over time
@@ -51,8 +54,8 @@ On a phone the daily table scrolls sideways with the row labels pinned; the char
 * `bin/hf-backup`: backup/restore of the sqlite db (see below)
 * `systemd/hf-tracker-container.service`: unit file calling `bin/hf-container`
 
-The tracker rows are defined in `METRICS` (daily rows, with `weekly_goal` for the chart goal line) and
-`WEIGHT` (label and unit) at the top of `www/cgi-bin/api.py`; the page builds itself from those.
+The tracker rows are defined in `METRICS` (daily rows, with the default `weekly_goal`) and `WEIGHT`
+(label and unit) at the top of `www/cgi-bin/api.py`; the page builds itself from those.
 
 **There is no authentication.** nginx listens on `127.0.0.1:8577` by default. To reach it from
 other machines, change `listen` in `conf/nginx.conf` (or put an authenticating reverse proxy in front).
@@ -80,7 +83,8 @@ sudo systemctl enable hf-tracker-container.service --now
 sqlite3 var/data/tracker.db 'SELECT * FROM entries ORDER BY day'
 ```
 Tables: `entries(day, metric, value, updated)` keyed by (day, metric) - weight is the `weight` metric
-on the week's first day - and `settings(key, value)`.
+on the week's first day - and `settings(key, value)`: `start_day` and `goal_<metric>` (weekly goals
+set on the page; missing keys fall back to the defaults in `api.py`).
 Data is stored per calendar day, so changing the start day just re-slices the same data into
 different weeks.
 
