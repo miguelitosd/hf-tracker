@@ -1,4 +1,4 @@
-HF-tracking
+hf-tracking
 ===========
 
 A small web version of the *Healthy Foundations Program Goals Tracker* PDF.  Each day has
@@ -100,7 +100,7 @@ Restore verifies the backup, snapshots the current data as `tracker-...-pre-rest
 (never pruned by `--keep`), then writes the backup into the live database; no restart needed.
 `--db`/`--dir` (or `HF_DB`/`HF_BACKUP_DIR`) override the defaults.  Nightly via cron:
 ```
-30 2 * * * /home/<USER>/git-work/HF-tracking/bin/hf-backup backup --keep 60
+30 2 * * * /home/<USER>/git-work/hf-tracking/bin/hf-backup backup --keep 60
 ```
 Errors go to stderr with a non-zero exit, so cron mails you only when something fails.  Backups
 live inside the repo dir by default; point `--dir` at another disk if you want them off this one.
