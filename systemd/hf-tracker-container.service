@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 Type=forking
-ExecStart=/home/<USER>/git-work/hf-tracking/bin/hf-container start
-ExecStop=/home/<USER>/git-work/hf-tracking/bin/hf-container stop
+ExecStart=/home/<USER>/git-work/hf-tracker/bin/hf-container start
+ExecStop=/home/<USER>/git-work/hf-tracker/bin/hf-container stop
 User=<USER>
 Group=<USER>
 RemainAfterExit=yes
