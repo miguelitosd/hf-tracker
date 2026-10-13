@@ -21,6 +21,9 @@ The service runs in a singularity container (like graphite-api-singularity):
 nginx serves the static HTML5 page and runs a small Python CGI JSON API through fcgiwrap,
 which stores data in sqlite3.
 
+You could, of course, simply serve the html and cgi off another existing web server as well, 
+and configure that with SSL, login access, etc, if desired.
+
 # Screenshots
 Sample data, 3-month chart view.
 
